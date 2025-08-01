@@ -24,3 +24,20 @@ def fetch_route(start_coords, end_coords):
         "distance_km": summary['distance'] / 1000,
         "duration_hr": summary['duration'] / 3600
     }
+
+def geocode_location(location_name):
+    url = "https://api.openrouteservice.org/geocode/search"
+    params = {
+        "api_key": settings.ORS_API_KEY,
+        "text": location_name,
+        "size": 1
+    }
+    res = requests.get(url, params=params)
+    res.raise_for_status()
+
+    features = res.json()["features"]
+    if not features:
+        raise ValueError(f"Could not geocode: {location_name}")
+
+    coords = features[0]["geometry"]["coordinates"]  # [lon, lat]
+    return coords

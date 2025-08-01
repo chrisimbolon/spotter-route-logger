@@ -1,3 +1,5 @@
+from django.urls import path
+from .views import TripViewSet, StopViewSet, generate_logsheet
 from rest_framework.routers import DefaultRouter
 from .views import TripViewSet, StopViewSet
 
