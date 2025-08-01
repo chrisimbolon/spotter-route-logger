@@ -5,4 +5,6 @@ router = DefaultRouter()
 router.register(r'trips', TripViewSet)
 router.register(r'stops', StopViewSet)
 
-urlpatterns = router.urls
+urlpatterns = router.urls + [
+    path('generate-logsheet/<int:trip_id>/', generate_logsheet, name='generate-logsheet'),
+]
