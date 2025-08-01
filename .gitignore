@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+*.env
+*.DS_Store
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+
+# venv
+venv*/
+.env/
+
+# Node.js
+node_modules/
+.next/
+dist/
+*.log
+.env.local
+
+# VSCode & Mac
+.vscode/
+.DS_Store
+
+# OS junk
+Thumbs.db
+ehthumbs.db
+
+# Git
+*.swp
