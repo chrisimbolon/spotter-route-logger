@@ -9,6 +9,6 @@ class StopSerializer(serializers.ModelSerializer):
 class TripSerializer(serializers.ModelSerializer):
     stop = StopSerializer(many=True, read_only = True)
 
-    class Metea:
+    class Meta:
         model = Trip
         fields = '__all__'
