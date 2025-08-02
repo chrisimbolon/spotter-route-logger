@@ -97,10 +97,7 @@ class TripViewSet(viewsets.ModelViewSet):
         except ValueError as e:
             trip.delete()
             raise serializers.ValidationError({"error": str(e)})
-
-
    
-
 class StopViewSet(viewsets.ModelViewSet):
     queryset = Stop.objects.all()
     serializer_class = StopSerializer

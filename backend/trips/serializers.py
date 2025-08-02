@@ -6,8 +6,12 @@ class StopSerializer(serializers.ModelSerializer):
         model = Stop
         fields = '__all__'
 
+
+geometry = serializers.SerializerMethodField()
+
 class TripSerializer(serializers.ModelSerializer):
-    stop = StopSerializer(many=True, read_only = True)
+    stops = StopSerializer(many=True, read_only = True)
+    geometry = serializers.SerializerMethodField()
 
     class Meta:
         model = Trip

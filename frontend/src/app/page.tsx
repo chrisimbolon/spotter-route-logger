@@ -1,103 +1,277 @@
-import Image from "next/image";
+// src/app/page.tsx
 
-export default function Home() {
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { TripCard } from "@/components/TripCard"
+import { TripMap } from "@/components/TripMap"
+import { Timeline } from "@/components/Timeline"
+import DailyLog from "@/components/DailyLog"
+import { Legend } from "@/components/Legend"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import api, { API_URL } from "@/lib/api"
+
+export default function HomePage() {
+  const [driver, setDriver] = useState("")
+  const [start, setStart] = useState("")
+  const [end, setEnd] = useState("")
+  const [cycleHours, setCycleHours] = useState(11)
+  const [loading, setLoading] = useState(false)
+  const [trips, setTrips] = useState([])
+  const router = useRouter()
+
+  useEffect(() => {
+    fetch(`${API_URL}/trips/`).then(res => res.json()).then(setTrips)
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/trips/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          driver_name: driver,
+          start_location: start,
+          end_location: end,
+          cycle_hours: cycleHours,
+        }),
+      })
+      if (!res.ok) return toast.error("Failed to create trip.")
+      const trip = await res.json()
+      toast.success("Trip created!")
+      router.push(`/trips/${trip.id}`)
+    } catch {
+      toast.error("Something went wrong.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+      {/* Left: Form + Legend */}
+      <div>
+        <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-xl shadow">
+          <h2 className="text-xl font-semibold">Plan a Trip</h2>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+          <div>
+            <Label>Pickup Location</Label>
+            <Input value={start} onChange={(e) => setStart(e.target.value)} />
+          </div>
+
+          <div>
+            <Label>Dropoff Location</Label>
+            <Input value={end} onChange={(e) => setEnd(e.target.value)} />
+          </div>
+
+          <div>
+            <Label>Maximum driving hours</Label>
+            <Input
+              type="number"
+              value={cycleHours}
+              onChange={(e) => setCycleHours(parseInt(e.target.value))}
+              min={1}
+              required
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          </div>
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Creating..." : "Create Trip"}
+          </Button>
+        </form>
+
+        <Legend />
+      </div>
+
+      {/* Right: Map + Timeline + Log Preview + Recent Trips */}
+      <div className="space-y-6">
+        <TripMap />
+
+        <Timeline
+          logs={[
+            {
+              time: new Date(Date.now() + 0 * 60 * 60 * 1000).toISOString(),
+              status: "Driving",
+            },
+            {
+              time: new Date(Date.now() + 11 * 60 * 60 * 1000).toISOString(),
+              status: "Rest Stop",
+            },
+            {
+              time: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+              status: "Off Duty",
+            },
+          ]}
+        />
+
+        <DailyLog
+          logs={[
+            {
+              date: new Date().toISOString().split("T")[0],
+              offDuty: 6,
+              sleeper: 8,
+              driving: 9,
+              onDuty: 1,
+              totalHours: 24,
+            },
+          ]}
+        />
+
+        <p className="text-xs text-muted-foreground italic text-center -mt-2">
+          This is a sample log preview. Real log will be generated after trip submission.
+        </p>
+
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Recent Trips</h2>
+          {trips.map((trip) => (
+            <TripCard key={trip.id} {...trip} />
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+      </div>
+    </main>
+  )
 }
+
+
+
+// import { useEffect, useState } from "react"
+// import { useRouter } from "next/navigation"
+// import { TripCard } from "@/components/TripCard"
+// import { TripMap } from "@/components/TripMap"
+// import { Timeline } from "@/components/Timeline"
+// import DailyLog from "@/components/DailyLog"
+// import { Legend } from "@/components/Legend"
+// import { Input } from "@/components/ui/input"
+// import { Label } from "@/components/ui/label"
+// import { Button } from "@/components/ui/button"
+// import { toast } from "sonner"
+// import { cn } from "@/lib/utils"
+// import api, { API_URL } from "@/lib/api"
+
+// export default function HomePage() {
+//   const [driver, setDriver] = useState("")
+//   const [start, setStart] = useState("")
+//   const [end, setEnd] = useState("")
+//   const [cycleHours, setCycleHours] = useState(11)
+//   const [loading, setLoading] = useState(false)
+//   const [trips, setTrips] = useState([])
+//   const router = useRouter()
+
+//   useEffect(() => {
+//     fetch(`${API_URL}/trips/`).then(res => res.json()).then(setTrips)
+//   }, [])
+
+//   const handleSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault()
+//     setLoading(true)
+//     try {
+//       const res = await fetch(`${API_URL}/trips/`, {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({
+//           driver_name: driver,
+//           start_location: start,
+//           end_location: end,
+//           cycle_hours: cycleHours,
+//         }),
+//       })
+//       if (!res.ok) return toast.error("Failed to create trip.")
+//       const trip = await res.json()
+//       toast.success("Trip created!")
+//       router.push(`/trips/${trip.id}`)
+//     } catch {
+//       toast.error("Something went wrong.")
+//     } finally {
+//       setLoading(false)
+//     }
+//   }
+
+//   return (
+//     <main className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+//       {/* Left: Form + Legend */}
+//       <div>
+//         <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-xl shadow">
+//           <h2 className="text-xl font-semibold">Plan a Trip</h2>
+
+//           <div>
+//             <Label>Pickup Location</Label>
+//             <Input value={start} onChange={(e) => setStart(e.target.value)} />
+//           </div>
+
+//           <div>
+//             <Label>Dropoff Location</Label>
+//             <Input value={end} onChange={(e) => setEnd(e.target.value)} />
+//           </div>
+
+//           <div>
+//             <Label>Maximum driving hours</Label>
+//             <Input
+//               type="number"
+//               value={cycleHours}
+//               onChange={(e) => setCycleHours(parseInt(e.target.value))}
+//               min={1}
+//               required
+//             />
+//           </div>
+
+//           <Button type="submit" className="w-full" disabled={loading}>
+//             {loading ? "Creating..." : "Create Trip"}
+//           </Button>
+//         </form>
+
+//         <Legend />
+//       </div>
+
+//       {/* Right: Map + Timeline + Recent Trips */}
+//       <div className="space-y-6">
+//         <TripMap />
+//         <Timeline
+//   logs={[
+//     {
+//       time: new Date(Date.now() + 0 * 60 * 60 * 1000).toISOString(),
+//       status: "Driving",
+//     },
+//     {
+//       time: new Date(Date.now() + 11 * 60 * 60 * 1000).toISOString(),
+//       status: "Rest Stop",
+//     },
+//     {
+//       time: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+//       status: "Off Duty",
+//     },
+//   ]}
+// />    
+//       <DailyLog
+//   logs={[
+//     {
+//       date: new Date().toISOString().split("T")[0],
+//       offDuty: 6,
+//       sleeper: 8,
+//       driving: 9,
+//       onDuty: 1,
+//       totalHours: 24,
+//     },
+//   ]}
+// />
+// <p className="text-xs text-muted-foreground italic text-center -mt-2">
+//   This is a sample log preview. Real log will be generated after trip submission.
+// </p>
+
+
+//         <div className="space-y-4">
+//           <h2 className="text-xl font-semibold">Recent Trips</h2>
+//           {trips.map((trip) => (
+//             <TripCard key={trip.id} {...trip} />
+//           ))}
+//         </div>
+//       </div>
+//     </main>
+//   )
+// }
