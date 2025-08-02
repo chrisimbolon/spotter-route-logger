@@ -35,23 +35,28 @@ class TripViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         return Response(serializer.data, status=201)
     
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            print("VALIDATION ERRORS:", serializer.errors)
+            return Response(serializer.errors, status=400)
+
         trip = serializer.save()
 
         try:
             start_coords = geocode_location(trip.start_location)
             end_coords = geocode_location(trip.end_location)
 
-        #  Full route response 
+            # Full route response
             route = fetch_route(start_coords, end_coords)
             coords = route["coordinates"]           # list of [lon, lat]
             total_distance = route["distance"]      # in meters
             total_duration = route["duration"]      # in seconds
 
-        #  Estimate driving speed (m/s)
+            # Estimate driving speed (m/s)
             average_speed = total_distance / total_duration
 
-        #  Init tracking
+            # Init tracking
             current_time = datetime.now()
             distance_covered = 0
             time_covered = 0
@@ -94,9 +99,16 @@ class TripViewSet(viewsets.ModelViewSet):
                     )
                     next_rest += rest_interval
 
+            # Prepare final response with geometry
+            final_data = TripSerializer(trip).data
+            final_data["geometry"] = route["geometry"]  # Polyline
+
+            return Response(final_data, status=201)
+
         except ValueError as e:
             trip.delete()
-            raise serializers.ValidationError({"error": str(e)})
+            return Response({"error": str(e)}, status=400)
+
    
 class StopViewSet(viewsets.ModelViewSet):
     queryset = Stop.objects.all()

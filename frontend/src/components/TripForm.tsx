@@ -37,6 +37,7 @@ export default function TripForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-white rounded-xl shadow">
+
       <h2 className="text-2xl font-bold">Plan a Trip</h2>
 
       <div>

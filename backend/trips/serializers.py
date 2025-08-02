@@ -16,3 +16,7 @@ class TripSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trip
         fields = '__all__'
+
+    def get_geometry(self, obj):
+        # Optionally store geometry in a field if persisted
+        return getattr(obj, 'geometry', None)
