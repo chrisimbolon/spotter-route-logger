@@ -6,6 +6,9 @@ class Trip(models.Model):
     end_location = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    current_location = models.CharField(max_length=255, null=True, blank=True)  
+    cycle_hours = models.FloatField(null=True, blank=True)  
+
     def __str__(self):
         return f"{self.driver_name} - {self.start_location} to {self.end_location}"
 
