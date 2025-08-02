@@ -1,30 +1,44 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 def generate_logsheet_for_trip(trip):
-    # Grab stops and sort by arrival time
-    stops = trip.stops.all().order_by('arrival_time')
+    logsheet = []
 
-    # Initialize 24h log starting from the first stop (or now)
-    log_entries = []
-    current_time = stops[0].arrival_time if stops else datetime.now()
+    # Sort stops by arrival_time
+    stops = trip.stops.order_by('arrival_time')
 
+    # Add 1 hour pickup at the start location
+    if stops.exists():
+        first_stop_time = stops.first().arrival_time
+    else:
+        first_stop_time = trip.created_at + timedelta(hours=1)
+
+    logsheet.append({
+        "event": "Pickup",
+        "location": trip.start_location,
+        "time": (first_stop_time - timedelta(hours=1)).isoformat(),
+        "duration": "1h",
+    })
+
+    # Add entries for each stop
     for stop in stops:
-        # Driving block: from current time to arrival
-        if stop.arrival_time and stop.arrival_time > current_time:
-            log_entries.append({
-                "type": "driving",
-                "start": current_time.isoformat(),
-                "end": stop.arrival_time.isoformat()
-            })
-            current_time = stop.arrival_time
+        logsheet.append({
+            "event": stop.stop_type.capitalize(),
+            "location": stop.location_name,
+            "time": stop.arrival_time.isoformat(),
+            "duration": str((stop.departure_time - stop.arrival_time)),
+        })
 
-        # Rest/fuel block
-        if stop.departure_time and stop.departure_time > current_time:
-            log_entries.append({
-                "type": stop.stop_type,
-                "start": stop.arrival_time.isoformat(),
-                "end": stop.departure_time.isoformat()
-            })
-            current_time = stop.departure_time
+    # Add 1 hour drop-off at the end location
+    if stops.exists():
+        last_stop_time = stops.last().departure_time
+    else:
+        last_stop_time = trip.created_at + timedelta(hours=2)
 
-    return log_entries
+    logsheet.append({
+        "event": "Drop-off",
+        "location": trip.end_location,
+        "time": last_stop_time.isoformat(),
+        "duration": "1h",
+    })
+
+    return logsheet
