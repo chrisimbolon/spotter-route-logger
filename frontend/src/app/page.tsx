@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import TripForm from "@/components/TripForm";
 import { TripCard } from "@/components/TripCard"
 import { TripMap } from "@/components/TripMap"
 import { Timeline } from "@/components/Timeline"
@@ -58,35 +59,7 @@ export default function HomePage() {
     <main className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-2 gap-8">
       {/* Left: Form + Legend */}
       <div>
-        <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-xl shadow">
-          <h2 className="text-xl font-semibold">Plan a Trip</h2>
-
-          <div>
-            <Label>Pickup Location</Label>
-            <Input value={start} onChange={(e) => setStart(e.target.value)} />
-          </div>
-
-          <div>
-            <Label>Dropoff Location</Label>
-            <Input value={end} onChange={(e) => setEnd(e.target.value)} />
-          </div>
-
-          <div>
-            <Label>Maximum driving hours</Label>
-            <Input
-              type="number"
-              value={cycleHours}
-              onChange={(e) => setCycleHours(parseInt(e.target.value))}
-              min={1}
-              required
-            />
-          </div>
-
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Creating..." : "Create Trip"}
-          </Button>
-        </form>
-
+        <TripForm />
         <Legend />
       </div>
 

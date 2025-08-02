@@ -7,13 +7,15 @@ import { cn } from "@/lib/utils"
 import { Clock, MapPin } from "lucide-react"
 
 type Props = {
-  logs: LogItem[]
+  logs?: LogItem[] // Optional prop for safety
 }
 
 export function Timeline({ logs }: Props) {
+  const safeLogs = logs ?? [] // fallback if logs is undefined
+
   return (
     <div className="space-y-6 border-l-2 border-muted pl-4">
-      {logs.map((log, i) => (
+      {safeLogs.map((log, i) => (
         <Card
           key={i}
           className={cn(

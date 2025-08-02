@@ -5,8 +5,8 @@
 import { useEffect, useState } from 'react';
 import axios from '@/lib/api';
 import { useParams } from 'next/navigation';
-import Timeline from '@/components/Timeline';
-import TripMap from '@/components/TripMap';
+import {Timeline} from '@/components/Timeline';
+import {TripMap} from '@/components/TripMap';
 
 type Stop = {
   id: number;
