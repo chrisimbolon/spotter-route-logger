@@ -1,48 +1,80 @@
-"use client"
+// src/components/TripMapInner.tsx
 
-import { useEffect, useState } from "react"
-import L from "leaflet"
-import { MapContainer, TileLayer, Polyline, Marker, Popup } from "react-leaflet"
-import "leaflet/dist/leaflet.css"
+'use client';
 
-// Fix broken icon images
-delete (L.Icon.Default.prototype as any)._getIconUrl
+import { useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from "leaflet";
+
+delete L.Icon.Default.prototype._getIconUrl;
 
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: new URL("leaflet/dist/images/marker-icon-2x.png", import.meta.url).toString(),
-  iconUrl: new URL("leaflet/dist/images/marker-icon.png", import.meta.url).toString(),
-  shadowUrl: new URL("leaflet/dist/images/marker-shadow.png", import.meta.url).toString(),
-})
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
+});
 
-export default function TripMapInner() {
-  const [isMounted, setIsMounted] = useState(false)
+type Stop = {
+  id: number;
+  location_name: string;
+  lat: number;
+  lng: number;
+  stop_type: string;
+};
 
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
+export function TripMapInner({
+  stops,
+  route,
+}: {
+  stops: Stop[];
+  route: [number, number][];
+}) {
+  console.log("🚩 Stops received by TripMapInner:", stops);
+  console.log("🛣️ Route received by TripMapInner:", route);
 
-  if (!isMounted) return null // 🧠 Prevents SSR-related crashes
+  const mapRef = useRef(null);
+  const defaultCenter: [number, number] = [39.8283, -98.5795]; // center of USA
+  const defaultZoom = 5;
 
-  const center: [number, number] = [39.5, -98.35]
+  const FitMapBounds = ({ route }: { route: [number, number][] }) => {
+    const map = useMap();
+    useEffect(() => {
+      if (route.length > 0) {
+        map.fitBounds(route);
+      }
+    }, [route, map]);
+    return null;
+  };
 
   return (
-    <MapContainer
-      center={center}
-      zoom={4}
-      scrollWheelZoom={false}
-      className="h-[300px] w-full rounded-xl z-0"
-    >
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; OpenStreetMap contributors'
-      />
-      <Marker position={[41.8781, -87.6298]}>
-        <Popup>Chicago (Start)</Popup>
-      </Marker>
-      <Marker position={[33.749, -84.388]}>
-        <Popup>Atlanta (End)</Popup>
-      </Marker>
-      <Polyline positions={[[41.8781, -87.6298], [33.749, -84.388]]} color="teal" />
-    </MapContainer>
-  )
+    <div className="h-[500px] w-full rounded-xl overflow-hidden">
+      <MapContainer
+        center={route.length > 0 ? route[0] : defaultCenter}
+        zoom={defaultZoom}
+        scrollWheelZoom={true}
+        style={{ height: '100%', width: '100%' }}
+        ref={mapRef}
+      >
+        <TileLayer
+          attribution='&copy; OpenStreetMap contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+
+        {route.length > 0 && (
+          <>
+            <Polyline positions={route} color="blue" />
+            <FitMapBounds route={route} />
+          </>
+        )}
+
+        {stops.map((stop) => {
+          console.log("🧭 Marker for stop:", stop.location_name, stop.lat, stop.lng);
+          return (
+            <Marker key={stop.id} position={[stop.lat, stop.lng]} />
+          );
+        })}
+      </MapContainer>
+    </div>
+  );
 }
